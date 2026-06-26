@@ -1,0 +1,26 @@
+{
+  "name": "graffitico-docs",
+  "version": "1.0.0",
+  "description": "GraffitiCo document generation service \u2014 Quote, Invoice, Statement",
+  "main": "dist/index.js",
+  "scripts": {
+    "auth": "npx ts-node src/auth.ts",
+    "generate": "npx ts-node src/index.ts",
+    "build": "npx tsc"
+  },
+  "dependencies": {
+    "googleapis": "^144.0.0",
+    "handlebars": "^4.7.8",
+    "node-fetch": "^2.7.0",
+    "puppeteer": "^22.0.0",
+    "form-data": "^4.0.0",
+    "dotenv": "16.x"
+  },
+  "devDependencies": {
+    "@types/handlebars": "^4.1.0",
+    "@types/node": "^20.0.0",
+    "@types/node-fetch": "^2.6.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0"
+  }
+}
