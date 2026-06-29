@@ -23,9 +23,12 @@ const PORT = parseInt(process.env.PORT || '3000', 10);
 // Stage names from your Pipedrive pipelines.
 // Add more stage names here as you roll out to other pipelines.
 const STAGE_TRIGGERS: Record<string, DocumentMode> = {
-  // Sales - Active 1-Offs
   'Quote Sent':  'quote',
   'Job Done':    'invoice',
+  'Invoice Prep': 'invoice',
+  '56':  'quote',
+  '156': 'invoice',
+};
   // A/R pipelines — invoice prep stage
   'Invoice Prep': 'invoice',
 };
@@ -74,10 +77,11 @@ async function handler(req: http.IncomingMessage, res: http.ServerResponse) {
       return send(res, 200, { ignored: true, reason: 'not a deal event' });
     }
 
-    const dealId       = current.id;
-    const stageName    = current.stage_id?.name || current.stage_name || '';
-    const prevStageName = previous.stage_id?.name || previous.stage_name || '';
-
+   const dealId       = current.id;
+    // Debug: log the full payload so we can see what Pipedrive sends
+    console.log('Webhook payload:', JSON.stringify({ event, current_stage: current.stage_id, prev_stage: previous.stage_id, current_stage_name: current.stage_name }, null, 2));
+    const stageName     = String(current.stage_id?.name || current.stage_id || current.stage_name || '');
+    const prevStageName = String(previous.stage_id?.name || previous.stage_id || previous.stage_name || '');
     // Only trigger if stage actually changed
     if (stageName === prevStageName) {
       return send(res, 200, { ignored: true, reason: 'stage unchanged' });
