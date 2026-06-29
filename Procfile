@@ -1,1 +1,1 @@
-web: npm run build && node --max-old-space-size=400 dist/server.js
+web: node --max-old-space-size=400 dist/server.js

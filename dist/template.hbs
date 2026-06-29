@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  body{margin:0;background:#e7e7e2;font-family:'Hanken Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  @media print{
+    body{background:#fff;}
+    .page{box-shadow:none!important;margin:0 auto!important;}
+    @page{margin:0;size:letter;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page" style="position:relative;width:816px;min-height:1056px;margin:0 auto;background:#fff;box-shadow:0 14px 44px rgba(0,34,68,.16);overflow:hidden;display:flex;flex-direction:column;">
+
+  {{!-- Top accent bar --}}
+  <div style="height:6px;display:flex;flex-shrink:0;">
+    <div style="width:118px;background:#69be28;"></div>
+    <div style="flex:1;background:#002244;"></div>
+  </div>
+
+  <div style="padding:26px 52px 14px;position:relative;flex:1;display:flex;flex-direction:column;">
+
+    {{!-- EverClean watermark --}}
+    {{#if showBadge}}
+    <img src="{{badgeSrc}}" alt="" style="position:absolute;top:50%;left:50%;width:580px;height:580px;transform:translate(-50%,-50%);opacity:.06;z-index:0;pointer-events:none;"/>
+    {{/if}}
+
+    <div style="position:relative;z-index:1;display:flex;flex-direction:column;flex:1;">
+
+    {{!-- ── HEADER ── --}}
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px;">
+      <div>
+        <img src="{{logoSrc}}" alt="GraffitiCo" style="height:38px;display:block;"/>
+        <div style="margin-top:11px;font-size:10.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#69be28;">Professional Graffiti Removal</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:'Archivo',sans-serif;font-weight:800;font-size:34px;line-height:1;letter-spacing:.02em;color:#002244;">{{typeWord}}</div>
+        <div style="margin-top:9px;font-size:14px;font-weight:600;color:rgba(0,34,68,.5);font-variant-numeric:tabular-nums;">{{docNumber}}</div>
+        <div style="margin-top:11px;display:inline-block;padding:5px 12px;border-radius:999px;background:rgba(105,190,40,.15);color:#3f7d12;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;">{{statusPill}}</div>
+      </div>
+    </div>
+
+    {{!-- ── META ZONE ── --}}
+    <div style="display:flex;gap:28px;margin-top:12px;align-items:stretch;">
+
+      {{!-- Left: Bill To + Service Address --}}
+      <div style="flex:1.35;display:flex;flex-direction:column;gap:12px;">
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#69be28;margin-bottom:8px;">Bill To</div>
+          <div style="font-size:15px;font-weight:700;color:#002244;">{{recipientName}}</div>
+          {{#each recipientLines}}
+          <div style="font-size:13px;color:rgba(0,34,68,.6);line-height:1.55;">{{this}}</div>
+          {{/each}}
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#69be28;margin-bottom:8px;">Service Address</div>
+          <div style="font-size:15px;font-weight:700;color:#002244;">{{serviceName}}</div>
+          {{#each serviceLines}}
+          <div style="font-size:13px;color:rgba(0,34,68,.6);line-height:1.55;">{{this}}</div>
+          {{/each}}
+        </div>
+      </div>
+
+      {{!-- Right: meta card --}}
+      <div style="flex:1;border:1px solid rgba(0,34,68,.13);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;">
+        <div style="padding:13px 20px;display:flex;flex-direction:column;gap:9px;">
+          {{#each metaRows}}
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;">
+            <span style="font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:rgba(0,34,68,.48);">{{label}}</span>
+            <span style="font-size:13.5px;font-weight:600;color:#002244;font-variant-numeric:tabular-nums;text-align:right;">{{value}}</span>
+          </div>
+          {{/each}}
+        </div>
+        <div style="margin-top:auto;background:#002244;padding:13px 20px;display:flex;justify-content:space-between;align-items:baseline;gap:10px;">
+          <span style="font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.68);">{{totalLabel}}</span>
+          <span style="font-family:'Archivo',sans-serif;font-size:25px;font-weight:800;color:#69be28;font-variant-numeric:tabular-nums;">{{totalFmt}}</span>
+        </div>
+      </div>
+    </div>
+
+    {{!-- ── SUBJECT BAND ── --}}
+    <div style="margin-top:12px;padding:8px 16px;background:rgba(0,34,68,.04);border-left:3px solid #69be28;border-radius:0 6px 6px 0;">
+      <span style="font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(0,34,68,.48);margin-right:10px;">Re</span>
+      <span style="font-size:13.5px;font-weight:600;color:#002244;">{{subject}}</span>
+    </div>
+
+    {{!-- ── LINE-ITEM TABLE (Quote & Invoice) ── --}}
+    {{#if isLineMode}}
+    <table style="width:100%;border-collapse:collapse;margin-top:10px;font-variant-numeric:tabular-nums;">
+      <colgroup>
+        <col style="width:19%"/>
+        <col/>
+        <col style="width:12%"/>
+        <col style="width:7%"/>
+        <col style="width:13%"/>
+        <col style="width:13%"/>
+      </colgroup>
+      <thead>
+        <tr style="background:#002244;">
+          <th style="text-align:left;padding:11px 14px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;">Product / Service</th>
+          <th style="text-align:left;padding:11px 14px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;">Description</th>
+          <th style="text-align:left;padding:11px 14px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;">Billing</th>
+          <th style="text-align:right;padding:11px 14px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;">Qty</th>
+          <th style="text-align:right;padding:11px 14px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;">Unit Price</th>
+          <th style="text-align:right;padding:11px 14px;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#fff;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each items}}
+        <tr style="border-bottom:1px solid rgba(0,34,68,.1);vertical-align:top;">
+          <td style="padding:10px 14px;font-size:13.5px;font-weight:700;color:#002244;">{{name}}</td>
+          <td style="padding:10px 14px;font-size:12px;color:rgba(0,34,68,.62);line-height:1.55;">{{desc}}</td>
+          <td style="padding:10px 14px;font-size:12px;color:rgba(0,34,68,.68);">{{freq}}</td>
+          <td style="padding:10px 14px;text-align:right;font-size:13px;color:#002244;">{{qty}}</td>
+          <td style="padding:10px 14px;text-align:right;font-size:13px;color:#002244;">{{unitPriceFmt}}</td>
+          <td style="padding:10px 14px;text-align:right;font-size:13.5px;font-weight:700;color:#002244;">{{amountFmt}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    {{/if}}
+
+    {{!-- ── STATEMENT TABLE ── --}}
+    {{#if isStatement}}
+    <table style="width:100%;border-collapse:collapse;margin-top:10px;font-variant-numeric:tabular-nums;">
+      <thead>
+        <tr style="background:#002244;">
+          <th style="text-align:left;padding:9px 10px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;">Job #</th>
+          <th style="text-align:left;padding:9px 10px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;">Asset</th>
+          <th style="text-align:left;padding:9px 10px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;">Facility</th>
+          <th style="text-align:left;padding:9px 10px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;">Invoice #</th>
+          <th style="text-align:right;padding:9px 10px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;">Subtotal</th>
+          <th style="text-align:right;padding:9px 10px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;">Tax %</th>
+          <th style="text-align:right;padding:9px 10px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;">Tax $</th>
+          <th style="text-align:right;padding:9px 10px;font-size:9.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each statementRows}}
+        <tr style="{{rowStyle}}">
+          <td style="padding:9px 10px;font-size:11.5px;color:rgba(0,34,68,.6);">{{jobNumber}}</td>
+          <td style="padding:9px 10px;font-size:11.5px;color:rgba(0,34,68,.6);">{{assetId}}</td>
+          <td style="padding:9px 10px;font-size:12px;font-weight:600;color:#002244;">{{facility}}</td>
+          <td style="padding:9px 10px;font-size:11.5px;color:rgba(0,34,68,.6);">{{invoiceNo}}</td>
+          <td style="padding:9px 10px;text-align:right;font-size:11.5px;color:#002244;">{{subtotalFmt}}</td>
+          <td style="padding:9px 10px;text-align:right;font-size:11px;color:rgba(0,34,68,.55);">{{taxRateDisplay}}</td>
+          <td style="padding:9px 10px;text-align:right;font-size:11.5px;color:#002244;">{{taxAmountFmt}}</td>
+          <td style="padding:9px 10px;text-align:right;font-size:12px;font-weight:700;color:#002244;">{{totalFmt}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    {{/if}}
+
+    {{!-- ── TOTALS BLOCK ── --}}
+    <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+      <div style="width:310px;">
+        <div style="display:flex;justify-content:space-between;padding:7px 2px;font-size:13px;color:rgba(0,34,68,.68);">
+          <span>Subtotal</span>
+          <span style="font-variant-numeric:tabular-nums;">{{subtotalFmt}}</span>
+        </div>
+        {{#each taxes}}
+        <div style="display:flex;justify-content:space-between;padding:7px 2px;font-size:13px;color:rgba(0,34,68,.68);border-top:1px solid rgba(0,34,68,.08);">
+          <span>{{label}} <span style="opacity:.55;">{{rate}}</span></span>
+          <span style="font-variant-numeric:tabular-nums;">{{amountFmt}}</span>
+        </div>
+        {{/each}}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:11px;background:#002244;color:#fff;padding:13px 16px;border-radius:9px;">
+          <span style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;">{{totalLabel}}</span>
+          <span style="font-family:'Archivo',sans-serif;font-size:22px;font-weight:800;color:#69be28;font-variant-numeric:tabular-nums;">{{totalFmt}}</span>
+        </div>
+      </div>
+    </div>
+
+    {{!-- ── PAYMENT STRIP (Invoice only) ── --}}
+    {{#if isInvoice}}
+    <div style="margin-top:12px;display:flex;gap:18px;align-items:stretch;padding:13px 19px;border:1px solid rgba(0,34,68,.13);border-radius:12px;background:rgba(105,190,40,.06);">
+      <div style="flex:1;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#3f7d12;margin-bottom:5px;">Payment</div>
+        <div style="font-size:12.5px;color:#002244;line-height:1.55;">{{paymentLine}}</div>
+      </div>
+      <div style="border-left:1px solid rgba(0,34,68,.13);padding-left:18px;">
+        <div style="font-size:10px;color:rgba(0,34,68,.48);text-transform:uppercase;letter-spacing:.1em;">Remit To</div>
+        <div style="font-size:12.5px;font-weight:600;color:#002244;line-height:1.55;margin-top:4px;">GraffitiCo<br/>982 Industry Drive<br/>Tukwila, WA 98188</div>
+      </div>
+    </div>
+    {{/if}}
+
+    {{!-- ── FOOTER ── --}}
+    <div style="margin-top:auto;padding-top:14px;border-top:2px solid #002244;">
+      <div style="font-size:12.5px;font-weight:600;color:#002244;line-height:1.45;">{{footerNote}}</div>
+      {{#if disclaimer}}
+      <div style="margin-top:7px;font-size:9.5px;color:rgba(0,34,68,.5);line-height:1.5;">{{disclaimer}}</div>
+      {{/if}}
+      <div style="margin-top:12px;display:flex;justify-content:center;align-items:center;gap:9px;flex-wrap:wrap;font-size:11.5px;color:rgba(0,34,68,.55);">
+        <span>982 Industry Drive · Tukwila, WA 98188</span><span style="color:#69be28;font-weight:700;">·</span>
+        <span>206-720-4777</span><span style="color:#69be28;font-weight:700;">·</span>
+        <span>Office@GraffitiCo.com</span><span style="color:#69be28;font-weight:700;">·</span>
+        <span>www.GraffitiCo.com</span>
+      </div>
+    </div>
+
+    {{!-- ── PAID STAMP (Invoice, when marked paid) ── --}}
+    {{#if showPaid}}
+    <div style="position:absolute;top:215px;right:74px;transform:rotate(-13deg);border:5px solid #69be28;color:#69be28;font-family:'Archivo',sans-serif;font-weight:800;font-size:50px;letter-spacing:.06em;padding:4px 24px;border-radius:12px;opacity:.82;pointer-events:none;">PAID</div>
+    {{/if}}
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
