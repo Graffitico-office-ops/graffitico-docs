@@ -9,12 +9,9 @@ import { DocumentMode } from './types';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
-const STAGE_TRIGGERS: Record<string, DocumentMode> = {
-  'Quote Sent': 'quote',
-  'Job Done': 'invoice',
-  'Invoice Prep': 'invoice',
-  '56': 'quote',
-  '156': 'invoice',
+const STAGE_TRIGGERS: Record<number, DocumentMode> = {
+  56: 'quote',
+  156: 'invoice',
 };
 
 function parseBody(req: http.IncomingMessage): Promise<any> {
@@ -45,33 +42,35 @@ async function handler(req: http.IncomingMessage, res: http.ServerResponse) {
 
   if (method === 'POST' && url === '/webhook/pipedrive') {
     const body = await parseBody(req);
-    const event = body.event || '';
-    const current = body.current || {};
-    const previous = body.previous || {};
 
-    console.log('RAW WEBHOOK:', JSON.stringify({ event, stage_id_current: current.stage_id, stage_id_previous: previous.stage_id }));
+    // Log full body to diagnose Pipedrive payload format
+    console.log('FULL WEBHOOK BODY:', JSON.stringify(body).slice(0, 500));
 
-    if (!event.includes('deal')) {
-      return send(res, 200, { ignored: true, reason: 'not a deal event' });
+    // Pipedrive v2 webhook format
+    const current  = body.current  || body.data || {};
+    const previous = body.previous || body.meta?.previous || {};
+
+    const dealId       = current.id;
+    const stageId      = Number(current.stage_id);
+    const prevStageId  = Number(previous.stage_id);
+
+    console.log(`Deal #${dealId} | Stage: ${prevStageId} → ${stageId}`);
+
+    if (!dealId) {
+      return send(res, 200, { ignored: true, reason: 'no deal id' });
     }
 
-    const dealId = current.id;
-    const stageName = String(current.stage_id || '');
-    const prevStageName = String(previous.stage_id || '');
-
-    console.log(`Stage: "${prevStageName}" → "${stageName}"`);
-
-    if (stageName === prevStageName) {
+    if (stageId === prevStageId) {
       return send(res, 200, { ignored: true, reason: 'stage unchanged' });
     }
 
-    const mode = STAGE_TRIGGERS[stageName];
+    const mode = STAGE_TRIGGERS[stageId];
     if (!mode) {
-      console.log(`No trigger for stage: ${stageName}`);
-      return send(res, 200, { ignored: true, reason: `no trigger for stage: ${stageName}` });
+      console.log(`No trigger for stage ID: ${stageId}`);
+      return send(res, 200, { ignored: true, reason: `no trigger for stage: ${stageId}` });
     }
 
-    console.log(`\n🔔 Deal #${dealId} moved to stage "${stageName}" → generating ${mode}`);
+    console.log(`\n🔔 Deal #${dealId} moved to stage ${stageId} → generating ${mode}`);
 
     setImmediate(async () => {
       try {
@@ -81,7 +80,7 @@ async function handler(req: http.IncomingMessage, res: http.ServerResponse) {
       }
     });
 
-    return send(res, 200, { accepted: true, dealId, mode, stage: stageName });
+    return send(res, 200, { accepted: true, dealId, mode, stageId });
   }
 
   if (method === 'POST' && url === '/generate') {
