@@ -1,4 +1,8 @@
 "use strict";
+/**
+ * pipedrive.ts — Pipedrive API client for GraffitiCo document generation.
+ * Handles rate limiting and pagination automatically.
+ */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -32,9 +36,6 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getDeal = getDeal;
 exports.getAllDeals = getAllDeals;
@@ -44,11 +45,6 @@ exports.getOrgDeals = getOrgDeals;
 exports.getUser = getUser;
 exports.attachFileToDeal = attachFileToDeal;
 exports.updateDeal = updateDeal;
-/**
- * pipedrive.ts — Pipedrive API client for GraffitiCo document generation.
- * Handles rate limiting and pagination automatically.
- */
-const node_fetch_1 = __importDefault(require("node-fetch"));
 const TOKEN = process.env.PIPEDRIVE_API_TOKEN;
 const DOMAIN = process.env.PIPEDRIVE_DOMAIN || 'graffitico';
 const BASE = `https://${DOMAIN}.pipedrive.com/api/v1`;
@@ -73,7 +69,7 @@ async function get(path, params = {}) {
     let lastErr;
     for (let attempt = 0; attempt < 3; attempt++) {
         try {
-            const res = await (0, node_fetch_1.default)(`${BASE}${path}?${qs}`);
+            const res = await fetch(`${BASE}${path}?${qs}`);
             if (!res.ok)
                 throw new Error(`Pipedrive ${path} → HTTP ${res.status}`);
             const json = await res.json();
@@ -144,7 +140,7 @@ async function attachFileToDeal(dealId, fileName, pdfBuffer) {
     const form = new FormData();
     form.append('file', pdfBuffer, { filename: fileName, contentType: 'application/pdf' });
     form.append('deal_id', String(dealId));
-    const res = await (0, node_fetch_1.default)(`${BASE}/files?api_token=${TOKEN}`, {
+    const res = await fetch(`${BASE}/files?api_token=${TOKEN}`, {
         method: 'POST',
         body: form,
         headers: form.getHeaders(),
@@ -160,7 +156,7 @@ async function attachFileToDeal(dealId, fileName, pdfBuffer) {
 }
 async function updateDeal(dealId, fields) {
     await throttle();
-    const res = await (0, node_fetch_1.default)(`${BASE}/deals/${dealId}?api_token=${TOKEN}`, {
+    const res = await fetch(`${BASE}/deals/${dealId}?api_token=${TOKEN}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(fields),

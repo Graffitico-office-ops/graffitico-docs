@@ -2,7 +2,7 @@
  * pipedrive.ts — Pipedrive API client for GraffitiCo document generation.
  * Handles rate limiting and pagination automatically.
  */
-import fetch from 'node-fetch';
+
 import { PipedriveDealProduct } from './types';
 
 const TOKEN  = process.env.PIPEDRIVE_API_TOKEN!;
