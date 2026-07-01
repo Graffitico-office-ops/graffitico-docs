@@ -8,6 +8,10 @@ import { PipedriveDealProduct } from './types';
 const TOKEN  = process.env.PIPEDRIVE_API_TOKEN!;
 const DOMAIN = process.env.PIPEDRIVE_DOMAIN || 'graffitico';
 const BASE   = `https://${DOMAIN}.pipedrive.com/api/v1`;
+const FETCH_OPTS = {
+  headers: { 'Connection': 'keep-alive' },
+  timeout: 30000,
+};
 
 // ─── Simple rate-limit queue ──────────────────────────────────────────────────
 // Pipedrive allows ~100 requests / 2 seconds per token.
@@ -23,11 +27,21 @@ async function throttle() {
 async function get(path: string, params: Record<string, any> = {}) {
   await throttle();
   const qs = new URLSearchParams({ api_token: TOKEN, ...params }).toString();
-  const res = await fetch(`${BASE}${path}?${qs}`);
-  if (!res.ok) throw new Error(`Pipedrive ${path} → HTTP ${res.status}`);
-  const json: any = await res.json();
-  if (!json.success) throw new Error(`Pipedrive error on ${path}: ${JSON.stringify(json.error)}`);
-  return json;
+  let lastErr: any;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const res = await fetch(`${BASE}${path}?${qs}`);
+      if (!res.ok) throw new Error(`Pipedrive ${path} → HTTP ${res.status}`);
+      const json: any = await res.json();
+      if (!json.success) throw new Error(`Pipedrive error: ${JSON.stringify(json.error)}`);
+      return json;
+    } catch (err: any) {
+      lastErr = err;
+      console.warn(`  ⚠️ Attempt ${attempt + 1} failed for ${path}: ${err.message}`);
+      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+    }
+  }
+  throw lastErr;
 }
 
 // ─── Paginated fetcher ────────────────────────────────────────────────────────
