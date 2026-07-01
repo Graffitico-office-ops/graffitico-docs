@@ -113,3 +113,16 @@ export async function attachFileToDeal(
 
   console.log(`  📎 Attached to Pipedrive deal #${dealId}`);
 }
+
+export async function updateDeal(dealId: number, fields: Record<string, any>): Promise<any> {
+  await throttle();
+  const res = await fetch(`${BASE}/deals/${dealId}?api_token=${TOKEN}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fields),
+  });
+  if (!res.ok) throw new Error(`Pipedrive update deal ${dealId} → HTTP ${res.status}`);
+  const json: any = await res.json();
+  if (!json.success) throw new Error(`Pipedrive update error: ${JSON.stringify(json.error)}`);
+  return json;
+}

@@ -38,6 +38,8 @@ const path = __importStar(require("path"));
 const dotenv = __importStar(require("dotenv"));
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 const batch_1 = require("./batch");
+const tax_1 = require("./tax");
+const pipedrive_1 = require("./pipedrive");
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const STAGE_TRIGGERS = {
     56: 'quote',
@@ -62,6 +64,27 @@ function send(res, status, data) {
     res.writeHead(status, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(data));
 }
+async function autoTaxDeal(dealId) {
+    try {
+        const deal = await (0, pipedrive_1.getDeal)(dealId);
+        const orgId = deal?.org_id?.value ?? deal?.org_id;
+        if (!orgId)
+            return;
+        const org = await (0, pipedrive_1.getOrganization)(orgId);
+        const rawAddr = org?.address;
+        if (!rawAddr || typeof rawAddr !== 'string')
+            return;
+        const { street, city, zip } = (0, tax_1.parseAddressString)(rawAddr);
+        if (!street || !zip) {
+            console.log(`  ⚠️  Tax skipped for deal #${dealId} — incomplete address: "${rawAddr}"`);
+            return;
+        }
+        await (0, tax_1.applyTaxToDeal)(dealId, street, city, zip, org?.name ?? '');
+    }
+    catch (err) {
+        console.error(`  ❌ Tax auto-populate failed for deal #${dealId}:`, err.message);
+    }
+}
 async function handler(req, res) {
     const url = req.url || '/';
     const method = req.method || 'GET';
@@ -71,9 +94,7 @@ async function handler(req, res) {
     }
     if (method === 'POST' && url === '/webhook/pipedrive') {
         const body = await parseBody(req);
-        // Log full body to diagnose Pipedrive payload format
         console.log('FULL WEBHOOK BODY:', JSON.stringify(body).slice(0, 500));
-        // Pipedrive v2 webhook format
         const current = body.current || body.data || {};
         const previous = body.previous || body.meta?.previous || {};
         const dealId = current.id;
@@ -82,6 +103,12 @@ async function handler(req, res) {
         console.log(`Deal #${dealId} | Stage: ${prevStageId} → ${stageId}`);
         if (!dealId) {
             return send(res, 200, { ignored: true, reason: 'no deal id' });
+        }
+        // New deal created — auto-populate tax immediately
+        if (!prevStageId && dealId) {
+            console.log(`\n🧾 New deal #${dealId} — auto-populating tax rate`);
+            setImmediate(() => autoTaxDeal(dealId));
+            return send(res, 200, { accepted: true, dealId, action: 'tax-lookup' });
         }
         if (stageId === prevStageId) {
             return send(res, 200, { ignored: true, reason: 'stage unchanged' });
@@ -94,6 +121,7 @@ async function handler(req, res) {
         console.log(`\n🔔 Deal #${dealId} moved to stage ${stageId} → generating ${mode}`);
         setImmediate(async () => {
             try {
+                await autoTaxDeal(dealId);
                 await (0, batch_1.runBatch)({ mode, dealIds: [dealId], concurrency: 1 });
             }
             catch (err) {

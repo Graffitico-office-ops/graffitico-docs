@@ -16,6 +16,8 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 import { runBatch } from './batch';
 import { DocumentMode } from './types';
+import { applyTaxToDeal, refreshAllTaxRates } from './tax';
+import { getDeal, getOrganization } from './pipedrive';
 
 // ─── Parse CLI args ───────────────────────────────────────────────────────────
 const args = process.argv.slice(2);
@@ -24,6 +26,82 @@ const get  = (flag: string) => {
   return i !== -1 ? args[i + 1] : undefined;
 };
 const has = (flag: string) => args.includes(flag);
+// ─── Tax commands (separate from quote/invoice/statement generation) ─────────
+const command = args[0];
+
+if (command === 'tax') {
+  const dealId = parseInt(args[1]);
+  if (isNaN(dealId)) {
+    console.error('\n❌ Usage: npm run generate -- tax <dealId>\n');
+    process.exit(1);
+  }
+
+  (async () => {
+    try {
+      console.log(`\nLooking up tax rate for deal #${dealId}...`);
+      const deal  = await getDeal(dealId);
+      const orgId = deal?.org_id?.value ?? deal?.org_id;
+      if (!orgId) throw new Error(`Deal #${dealId} has no organization attached`);
+
+      const org     = await getOrganization(orgId);
+      const rawAddr = org?.address;
+      if (!rawAddr || typeof rawAddr !== 'string') {
+        throw new Error('Organization has no address on file in Pipedrive');
+      }
+
+      const { parseAddressString } = await import('./tax');
+      const { street, city, zip } = parseAddressString(rawAddr);
+
+      if (!street || !zip) {
+        throw new Error(
+          `Could not extract a complete address (street + zip) from: "${rawAddr}". ` +
+          `Parsed as → street: "${street || 'MISSING'}", city: "${city || 'MISSING'}", zip: "${zip || 'MISSING'}". ` +
+          `Please add a 5-digit zip code to this organization's address in Pipedrive.`
+        );
+      }
+
+      await applyTaxToDeal(
+        dealId,
+        street,
+        city,
+        zip,
+        deal?.org_id?.name ?? '',
+      );
+      process.exit(0);
+    } catch (err: any) {
+      console.error('\n❌ Tax lookup failed:', err.message);
+      process.exit(1);
+    }
+  })();
+
+} else if (command === 'tax-refresh-all') {
+  const dryRunTax = has('--dry-run');
+  const taxConcurrency = parseInt(get('--concurrency') || '3', 10);
+
+  (async () => {
+    try {
+      const results = await refreshAllTaxRates({ dryRun: dryRunTax, concurrency: taxConcurrency });
+
+      const changed = results.filter(r => r.direction === 'increased' || r.direction === 'decreased');
+      if (changed.length > 0) {
+        console.log('\n⚠️  RATE CHANGES REQUIRING ATTENTION:');
+        console.log('─────────────────────────────────────────────────────');
+        for (const r of changed) {
+          const arrow = r.direction === 'increased' ? '🔺' : '🔻';
+          const prev  = r.previous !== null ? (r.previous * 100).toFixed(4) + '%' : 'n/a';
+          const curr  = (r.current * 100).toFixed(4) + '%';
+          console.log(`  ${arrow} ${r.orgName.padEnd(40)} ${prev} → ${curr}`);
+        }
+        console.log('─────────────────────────────────────────────────────\n');
+      }
+      process.exit(0);
+    } catch (err: any) {
+      console.error('\n❌ Tax refresh failed:', err.message);
+      process.exit(1);
+    }
+  })();
+
+} else {
 
 const mode    = (get('--mode') || 'invoice') as DocumentMode;
 const dealsRaw = get('--deals');
@@ -55,3 +133,4 @@ runBatch({ mode, dealIds, dryRun, concurrency })
     console.error('\n❌ Fatal error:', err);
     process.exit(1);
   });
+}

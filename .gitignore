@@ -2,3 +2,5 @@ node_modules/
 output/
 .env
 *.pdf
+gettoken.js
+test-lookup.ts

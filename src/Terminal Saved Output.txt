@@ -1,0 +1,82 @@
+Last login: Tue Jun 30 08:15:53 on ttys000
+alanbruckner@mac ~ % cd ~/Downloads/graffitico-docs
+alanbruckner@mac graffitico-docs % ls
+assets			node_modules		package.json		src
+dist			output			Procfile		tsconfig.json
+gettoken.js		package-lock.json	README.md
+alanbruckner@mac graffitico-docs % nano src/fields.ts
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  UW PICO 5.09                                      File: src/fields.ts                                       Modified  
+
+} as const;
+  
+// ─── Product fields (on deal line items) ─────────────────────────────────────
+export const PRODUCT = {
+  NAME:              'name',
+  DESCRIPTION:       'description',
+  QUOTE_DESCRIPTION: '2ff3340b5caca311aa1fdc22918281dd66f203d4',  // custom long-form desc for quotes
+  BILLING_FREQUENCY: 'billing_frequency',   // one-time | monthly | quarterly | annually
+  UNIT_PRICES:       'unit_prices',
+  QUANTITY:          'quantity',
+  AMOUNT:            'sum',                 // total line amount (unit_price × qty)
+  ITEM_PRICE:        'item_price',
+} as const;
+  
+// ─── Billing frequency option labels ──────────────────────────────────────$
+export const BILLING_FREQ_LABELS: Record<string, string> = {
+  'one-time':      'One-time',
+  'weekly':        'Weekly',
+  'monthly':       'Monthly',
+  'quarterly':     'Quarterly',
+  'semi-annually': 'Every 6 months',
+  'annually':      'Annually',
+};
+  
+// ─── County → tax label map (for document display) ───────────────────────────
+export const COUNTY_TAX_LABELS: Record<string, string> = {
+  'King':       'King County',
+  'Snohomish':  'Snohomish County',
+  'Pierce':     'Pierce County',
+  'Thurston':   'Thurston County', 
+  'Kitsap':     'Kitsap County',
+  'Lewis':      'Lewis County',
+  'Skagit':     'Skagit County',   
+  'Kittitas':   'Kittitas County',
+};
+  
+
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+
+^G Get Help         ^O WriteOut         ^R Read File        ^Y Prev Pg          ^K Cut Text         ^C Cur Pos          
+^X Exit             ^J Justify          ^W Where is         ^V Next Pg          ^U UnCut Text       ^T To Spell        

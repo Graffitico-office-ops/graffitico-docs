@@ -6,6 +6,8 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 import { runBatch } from './batch';
 import { DocumentMode } from './types';
+import { applyTaxToDeal, parseAddressString } from './tax';
+import { getDeal, getOrganization } from './pipedrive';
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
@@ -31,6 +33,28 @@ function send(res: http.ServerResponse, status: number, data: any) {
   res.end(JSON.stringify(data));
 }
 
+async function autoTaxDeal(dealId: number): Promise<void> {
+  try {
+    const deal  = await getDeal(dealId);
+    const orgId = deal?.org_id?.value ?? deal?.org_id;
+    if (!orgId) return;
+
+    const org     = await getOrganization(orgId);
+    const rawAddr = org?.address;
+    if (!rawAddr || typeof rawAddr !== 'string') return;
+
+    const { street, city, zip } = parseAddressString(rawAddr);
+    if (!street || !zip) {
+      console.log(`  ⚠️  Tax skipped for deal #${dealId} — incomplete address: "${rawAddr}"`);
+      return;
+    }
+
+    await applyTaxToDeal(dealId, street, city, zip, org?.name ?? '');
+  } catch (err: any) {
+    console.error(`  ❌ Tax auto-populate failed for deal #${dealId}:`, err.message);
+  }
+}
+
 async function handler(req: http.IncomingMessage, res: http.ServerResponse) {
   const url = req.url || '/';
   const method = req.method || 'GET';
@@ -43,21 +67,26 @@ async function handler(req: http.IncomingMessage, res: http.ServerResponse) {
   if (method === 'POST' && url === '/webhook/pipedrive') {
     const body = await parseBody(req);
 
-    // Log full body to diagnose Pipedrive payload format
     console.log('FULL WEBHOOK BODY:', JSON.stringify(body).slice(0, 500));
 
-    // Pipedrive v2 webhook format
     const current  = body.current  || body.data || {};
     const previous = body.previous || body.meta?.previous || {};
 
-    const dealId       = current.id;
-    const stageId      = Number(current.stage_id);
-    const prevStageId  = Number(previous.stage_id);
+    const dealId      = current.id;
+    const stageId     = Number(current.stage_id);
+    const prevStageId = Number(previous.stage_id);
 
     console.log(`Deal #${dealId} | Stage: ${prevStageId} → ${stageId}`);
 
     if (!dealId) {
       return send(res, 200, { ignored: true, reason: 'no deal id' });
+    }
+
+    // New deal created — auto-populate tax immediately
+    if (!prevStageId && dealId) {
+      console.log(`\n🧾 New deal #${dealId} — auto-populating tax rate`);
+      setImmediate(() => autoTaxDeal(dealId));
+      return send(res, 200, { accepted: true, dealId, action: 'tax-lookup' });
     }
 
     if (stageId === prevStageId) {
@@ -74,6 +103,7 @@ async function handler(req: http.IncomingMessage, res: http.ServerResponse) {
 
     setImmediate(async () => {
       try {
+        await autoTaxDeal(dealId);
         await runBatch({ mode, dealIds: [dealId], concurrency: 1 });
       } catch (err: any) {
         console.error(`❌ Generation failed for deal #${dealId}:`, err.message);

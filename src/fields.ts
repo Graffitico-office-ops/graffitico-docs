@@ -1,3 +1,4 @@
+
 /**
  * fields.ts — Pipedrive field key constants for GraffitiCo
  * Mapped from organizationFields, dealFields, and productFields API responses.
@@ -33,6 +34,8 @@ export const DEAL = {
   NET_TAX_PCT:       'a5ba7c1b07d1c0f044fb144f667e08b0d62ddd70',
   TAX_CODE:          'b9c8af49a8221cc4d8ab0725bfa45cae31f4e5ef',
   COUNTY:            '83ce917919683aa762241953519997b7aa6b19ee',
+  PREV_TAX_PCT:      '90582e909714bf1011dc2bd4ba5ea48376f22b3e',
+  TAX_LAST_CHECKED:  'f2f0422535be21c7635552a0d41df16dc5c2fcc4',
   // ── Job / pricing custom fields ──
   PRICE_RECURRING:   'a1e6b227433f23f57d4b719e96c32b91387e5ccb',
   QTY_SERVICES:      'a8b12c5caef16d6e701f41a1c6a3cc126c483ef5',
@@ -78,3 +81,17 @@ export const COUNTY_TAX_LABELS: Record<string, string> = {
   'Skagit':     'Skagit County',
   'Kittitas':   'Kittitas County',
 };
+// ─── County → Pipedrive option ID map ────────────────────────────────────────
+// These are the numeric IDs Pipedrive uses for the County single-option field.
+// Writing the label (e.g. "King") won't work — must use the ID.
+export const COUNTY_OPTION_IDS: Record<string, number> = {
+  'King':       133,
+  'Snohomish':  134,
+  'Pierce':     135,
+  'Thurston':   136,
+  'Kitsap':     137,
+  'Lewis':      138,
+  'Skagit':     139,
+  'Kittitas':   140,
+};
+

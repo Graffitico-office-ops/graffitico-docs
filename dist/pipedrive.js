@@ -43,6 +43,7 @@ exports.getDealProducts = getDealProducts;
 exports.getOrgDeals = getOrgDeals;
 exports.getUser = getUser;
 exports.attachFileToDeal = attachFileToDeal;
+exports.updateDeal = updateDeal;
 /**
  * pipedrive.ts — Pipedrive API client for GraffitiCo document generation.
  * Handles rate limiting and pagination automatically.
@@ -141,4 +142,18 @@ async function attachFileToDeal(dealId, fileName, pdfBuffer) {
     if (!json.success)
         throw new Error(`Pipedrive file attach error: ${JSON.stringify(json)}`);
     console.log(`  📎 Attached to Pipedrive deal #${dealId}`);
+}
+async function updateDeal(dealId, fields) {
+    await throttle();
+    const res = await (0, node_fetch_1.default)(`${BASE}/deals/${dealId}?api_token=${TOKEN}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(fields),
+    });
+    if (!res.ok)
+        throw new Error(`Pipedrive update deal ${dealId} → HTTP ${res.status}`);
+    const json = await res.json();
+    if (!json.success)
+        throw new Error(`Pipedrive update error: ${JSON.stringify(json.error)}`);
+    return json;
 }
